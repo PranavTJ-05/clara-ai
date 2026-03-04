@@ -7,6 +7,10 @@ app = FastAPI()
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key) if api_key else Groq()
 
+@app.get("/")
+async def root():
+    return {"message": "Clara AI Retell API is running. Point Retell to /retell"}
+
 @app.post("/retell")
 async def retell_llm(payload: dict):
     user_text = payload.get("transcript", "")
