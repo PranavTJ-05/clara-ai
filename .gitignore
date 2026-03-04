@@ -1,0 +1,27 @@
+# Virtual environments
+.venv/
+venv/
+env/
+.env
+
+# Python caching
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local data and outputs
+data/
+outputs/
+tasks.json
+changelogs/
+
+# n8n
+.n8n/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store

@@ -23,6 +23,21 @@ services:
       # Pass through user API keys for the Python Scripts
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - LLM_MODEL=${LLM_MODEL:-groq/llama-3.1-8b-instant}
+      # Re-enable File Trigger and Execute Command nodes
+      - NODES_EXCLUDE=[]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n
+    command: uvicorn scripts.api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./scripts:/home/node/scripts
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-llama3-70b-8192}
 
 volumes:
   n8n_data:
