@@ -37,7 +37,7 @@ services:
       - ./scripts:/home/node/scripts
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY:-}
-      - LLM_MODEL=${LLM_MODEL:-llama3-70b-8192}
+      - LLM_MODEL=${LLM_MODEL:-llama-3.1-70b-versatile}
 
 volumes:
   n8n_data:
