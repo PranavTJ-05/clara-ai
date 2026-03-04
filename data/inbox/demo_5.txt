@@ -1,0 +1,8 @@
+Agent: Delta Sprinkler Systems, how can I assist?
+Caller: Hey, I want to learn more about your services. Do you guys do inspections?
+Agent: Yes, we do annual and quarterly sprinkler inspections.
+Caller: If a pipe bursts in the winter, that happens sometimes here, do you have someone on call?
+Agent: Yes, burst pipes are top priority emergencies. We have a technician on call 24/7.
+Caller: Great. We use a software called Housecall Pro, can you connect to that?
+Agent: We might be able to, we can discuss integration later.
+Caller: Okay, talk later.

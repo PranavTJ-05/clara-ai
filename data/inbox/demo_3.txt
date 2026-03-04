@@ -1,0 +1,9 @@
+Agent: Welcome to Secure Alarm Systems demo voice agent.
+Caller: Hey. I want to replace my current alarm provider. Our panels keep beeping.
+Agent: We can definitely help with panel beeping. That's a common issue.
+Caller: If the panel is beeping, is that an emergency? 
+Agent: Usually we only consider it an emergency if the alarm is actually going off or if there is a fire. Beeping is a normal service call.
+Caller: I see. Our building office is open 9 to 6. If it's a real emergency, my cell phone is the number to call. 
+Agent: Okay, we'll route emergency calls to your cell phone.
+Caller: Thanks. What else do you need?
+Agent: We will follow up with an email later!

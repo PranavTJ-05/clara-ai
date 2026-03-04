@@ -1,0 +1,8 @@
+Agent: Delta Sprinklers onboarding.
+Caller: Hello. We are ready. Hours are 7:30 AM to 4:00 PM Eastern Time.
+Agent: Burst pipes are your emergencies.
+Caller: Yes. If a pipe bursts, immediately transfer to the 24/7 hotline at 555-0555. 
+Agent: What if the transfer fails?
+Caller: If it fails, wait 60 seconds and try again. 
+Agent: Regarding Housecall Pro?
+Caller: We decided not to integrate right now. Keep it out of the system. Let the voice agent just send us an email summary of the call.

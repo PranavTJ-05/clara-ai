@@ -1,0 +1,8 @@
+Agent: Hello, this is your onboarding for Cool Breeze HVAC.
+Caller: Hey. Let's get this done. My hours are strictly 7:00 AM to 5:00 PM Central Time, Monday to Friday.
+Agent: Perfect. We discussed AC out in a restaurant as an emergency. Anything else?
+Caller: Yes, walk-in freezer failure is also an emergency. 
+Agent: And routing?
+Caller: Try transferring to our main line. If it fails, let them know we will call them back in 15 minutes. No fallback number needed.
+Agent: Can we book appointments directly in your calendar?
+Caller: Yes, for non-emergencies during business hours you can book them.

@@ -1,0 +1,9 @@
+Agent: Hello, Clara Answers here for Cool Breeze HVAC.
+Caller: Hi, I'm trying to get someone out here to fix our AC at the restaurant. It's totally broken.
+Agent: I'm sorry to hear that. I can get someone out. Are you looking to set up an account too?
+Caller: Yeah, maybe. I just need this fixed first, it's 90 degrees in here. Is this an emergency? I guess so.
+Agent: Yes we can treat AC out in a restaurant as an emergency.
+Caller: Cool. What are your hours?
+Agent: We usually work from 7 AM to 4 PM Monday through Friday.
+Caller: Okay. Can you guys just call my manager if you show up? His name is Bob.
+Agent: Yes we will add Bob to the routing rules.

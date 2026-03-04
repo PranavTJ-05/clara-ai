@@ -1,0 +1,9 @@
+Agent: This is Clara for Spark Electrical.
+Caller: Hi, we manage a few properties in the downtown area. Looking into your services.
+Agent: Excellent. We handle all electrical maintenance.
+Caller: Sometimes we have power outages at the strip mall, which is a big deal. We consider that an emergency.
+Agent: Power outage is definitely an emergency. We dispatch immediately for those.
+Caller: If it's just a broken lightbulb outside, can we just leave a message?
+Agent: Yes, non-emergencies can just leave a voicemail after hours.
+Caller: Great. I don't know my exact office hours right now, maybe 8:30 to 4:30? Let me check on that later.
+Agent: No problem.

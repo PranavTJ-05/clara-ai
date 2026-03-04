@@ -1,0 +1,23 @@
+{
+    "account_id": "account_1",
+    "company_name": "Apex Fire Protection",
+    "business_hours": "8:00 AM to 5:00 PM EST, Monday through Friday",
+    "office_address": null,
+    "services_supported": [
+        "Sprinkler systems",
+        "Fire alarms"
+    ],
+    "emergency_definition": [
+        "Active sprinkler leaks",
+        "Fire alarms triggered"
+    ],
+    "emergency_routing_rules": "Call dispatch first at 555-0199. If they don't answer within 30 seconds, fallback and call my cell at 555-0100.",
+    "non_emergency_routing_rules": "Leave a message.",
+    "call_transfer_rules": "Transfer to main office.",
+    "integration_constraints": "NEVER create sprinkler jobs in ServiceTrade automatically. Only log notes.",
+    "after_hours_flow_summary": null,
+    "office_hours_flow_summary": null,
+    "questions_or_unknowns": null,
+    "notes": null,
+    "version": "v2"
+}

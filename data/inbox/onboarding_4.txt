@@ -1,0 +1,8 @@
+Agent: Spark Electrical onboarding.
+Caller: Let's finalize. Office hours are confirmed: 8:30 AM to 4:30 PM Mountain Time, Monday-Friday.
+Agent: We noted power outages as emergencies.
+Caller: Yes, and also exposed live wires. Those are emergencies.
+Agent: For after hours emergencies?
+Caller: Route to the on-call tech at 555-0444. If they don't answer, just apologize and say we'll reach out ASAP.
+Agent: And non-emergencies?
+Caller: Tell them to leave a message.

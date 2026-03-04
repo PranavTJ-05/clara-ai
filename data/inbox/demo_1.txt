@@ -1,0 +1,11 @@
+Agent: Hi this is Clara from Apex Fire Protection, how can I help you?
+Caller: Hi, I'm calling from Main Street Apartments. We are looking for a new fire protection company.
+Agent: Great! What kind of services do you offer?
+Caller: Well, we have sprinklers and fire alarms. I understand you guys do both?
+Agent: Yes, we do.
+Caller: We also have emergencies sometimes, like if a sprinkler head gets knocked off. Do you guys handle those 24/7?
+Agent: Yes, we have 24/7 dispatch for emergencies.
+Caller: Perfect. I think our business hours are roughly 8 to 5 on weekdays. Do I need to integrate with anything?
+Agent: We use ServiceTrade for our backend.
+Caller: Ah, right, we're not familiar with that yet, maybe we can figure it out later.
+Agent: Sounds good, we will send over some pricing.

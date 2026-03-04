@@ -1,0 +1,8 @@
+Agent: Hi, welcome to your onboarding for Apex Fire Protection. Let's finalize your setup.
+Caller: Great. So my actual business hours are 8:00 AM to 5:00 PM EST, Monday through Friday. 
+Agent: Got it. And for emergencies?
+Caller: Emergencies are ONLY active sprinkler leaks or fire alarms triggered. Everything else is non-emergency.
+Agent: Understood. Who do we call for emergencies?
+Caller: Call dispatch first at 555-0199. If they don't answer within 30 seconds, fallback and call my cell at 555-0100.
+Agent: Okay, and any integration rules?
+Caller: Yes, please NEVER create sprinkler jobs in ServiceTrade automatically. Only log notes.

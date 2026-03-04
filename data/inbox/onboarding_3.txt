@@ -1,0 +1,6 @@
+Agent: Onboarding for Secure Alarm Systems.
+Caller: Hi. Okay, our hours are 9:00 AM to 6:00 PM Pacific Time, Mon-Fri.
+Agent: We previously said emergencies are only active alarms going off. 
+Caller: Correct. If it's just a panel beep, tell them to wait until morning. For active alarms, call my cell directly at 555-0222.
+Agent: What if you don't answer?
+Caller: Keep trying every 5 minutes for up to 3 tries. If still no answer, tell the caller to call 911.

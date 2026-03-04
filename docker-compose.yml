@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./data:/home/node/data
+      - ./scripts:/home/node/scripts
+      - ./outputs:/home/node/outputs
+      - ./changelogs:/home/node/changelogs
+      - ./tasks.json:/home/node/tasks.json
+    environment:
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      # Pass through user API keys for the Python Scripts
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-groq/llama-3.1-8b-instant}
+
+volumes:
+  n8n_data:
