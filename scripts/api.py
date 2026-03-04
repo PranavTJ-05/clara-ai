@@ -37,11 +37,8 @@ async def retell_websocket(websocket: WebSocket, call_id: str):
     await websocket.accept()
     print(f"Call {call_id} connected")
     
-    # Initialize conversation state
+    # Load Clara's prompt
     system_prompt = get_system_prompt()
-    conversation_history = [
-        {"role": "system", "content": system_prompt}
-    ]
     
     try:
         while True:
@@ -55,13 +52,15 @@ async def retell_websocket(websocket: WebSocket, call_id: str):
                 
             # Handle user utterance
             if message.get("interaction_type") == "response_required" or "transcript" in message:
-                user_text = message.get("transcript", "")
+                transcript = message.get("transcript", [])
                 
-                # Skip empty transcripts
-                if not user_text or len(user_text) == 0:
-                    continue
-                    
-                conversation_history.append({"role": "user", "content": user_text})
+                # Rebuild the LLM message array from Retell's transcript array
+                conversation_history = [{"role": "system", "content": system_prompt}]
+                
+                for turn in transcript:
+                    # Retell uses "agent" instead of "assistant" sometimes
+                    role = "assistant" if turn.get("role") == "agent" else turn.get("role", "user")
+                    conversation_history.append({"role": role, "content": turn.get("content", "")})
                 
                 try:
                     # Get response from Groq
@@ -72,7 +71,6 @@ async def retell_websocket(websocket: WebSocket, call_id: str):
                     )
                     
                     response_text = completion.choices[0].message.content
-                    conversation_history.append({"role": "assistant", "content": response_text})
                     
                     # Send response back to Retell
                     await websocket.send_text(json.dumps({
