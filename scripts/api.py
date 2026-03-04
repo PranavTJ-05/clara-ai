@@ -65,7 +65,7 @@ async def retell_websocket(websocket: WebSocket, call_id: str):
                 try:
                     # Get response from Groq
                     completion = client.chat.completions.create(
-                        model=os.environ.get("LLM_MODEL", "llama-3.1-70b-versatile"),
+                        model=os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile"),
                         messages=conversation_history,
                         temperature=0.2,
                     )
