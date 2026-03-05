@@ -3,62 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "triggerOn": "folder",
-        "path": "/home/node/data/inbox",
-        "events": [
-          "add"
-        ],
-        "options": {
-          "awaitWriteFinish": true,
-          "ignore": "**/.DS_Store"
-        }
-      },
-      "name": "Local File Trigger - Inbox",
-      "type": "n8n-nodes-base.localFileTrigger",
-      "position": [
-        250,
-        300
-      ],
-      "typeVersion": 1,
-      "id": "1"
-    },
-    {
-      "parameters": {
-        "command": "=\"python3 /home/node/scripts/process.py --file \" + $json[\"path\"]"
-      },
-      "name": "Execute Pipeline",
-      "type": "n8n-nodes-base.executeCommand",
-      "position": [
-        450,
-        300
-      ],
-      "typeVersion": 1,
-      "id": "2"
-    },
-    {
-      "parameters": {
-        "keepOnlySet": false,
-        "values": {
-          "string": [
-            {
-              "name": "status",
-              "value": "Success"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "name": "Log Success",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        650,
-        300
-      ],
-      "typeVersion": 1,
-      "id": "3"
-    },
-    {
-      "parameters": {
         "path": "post-call-analysis",
         "responseMode": "onReceived",
         "options": {}
@@ -211,28 +155,6 @@
     }
   ],
   "connections": {
-    "Local File Trigger - Inbox": {
-      "main": [
-        [
-          {
-            "node": "Execute Pipeline",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute Pipeline": {
-      "main": [
-        [
-          {
-            "node": "Log Success",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Retell Webhook": {
       "main": [
         [
