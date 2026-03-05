@@ -1,33 +1,38 @@
+"""
+tracker.py — Simulates task/CRM integration by writing to tasks.json.
+No paid APIs required.
+"""
+
 import json
 import os
-from datetime import datetime
+import uuid
+from datetime import datetime, timezone
 
-TRACKER_FILE = os.path.join(os.path.dirname(__file__), "..", "tasks.json")
+TASKS_FILE = "tasks/tasks.json"
 
-def create_task(account_id: str, summary: str, status: str = "Triage"):
-    """
-    Mocks an API call to a task tracker (like Asana) by appending to a local JSON array.
-    This fulfills the zero-cost and no-paid-API requirements of the test.
-    """
-    tasks = []
-    if os.path.exists(TRACKER_FILE):
-        with open(TRACKER_FILE, "r") as f:
-            try:
-                tasks = json.load(f)
-            except json.JSONDecodeError:
-                tasks = []
-                
-    new_task = {
-        "id": f"task_{int(datetime.now().timestamp())}",
+
+def create_task(account_id: str, task_type: str, metadata: dict = None):
+    """Append a task entry to tasks.json."""
+    os.makedirs("tasks", exist_ok=True)
+
+    existing = []
+    if os.path.exists(TASKS_FILE):
+        try:
+            with open(TASKS_FILE) as f:
+                existing = json.load(f)
+        except Exception:
+            existing = []
+
+    task = {
+        "task_id": str(uuid.uuid4()),
         "account_id": account_id,
-        "summary": summary,
-        "status": status,
-        "created_at": datetime.now().isoformat()
+        "task_type": task_type,
+        "status": "open",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "metadata": metadata or {}
     }
-    
-    tasks.append(new_task)
-    
-    with open(TRACKER_FILE, "w") as f:
-        json.dump(tasks, f, indent=2)
-        
-    print(f"Task created in tracker: {summary}")
+
+    existing.append(task)
+
+    with open(TASKS_FILE, "w") as f:
+        json.dump(existing, f, indent=2)

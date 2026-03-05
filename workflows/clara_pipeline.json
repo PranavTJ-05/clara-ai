@@ -1,228 +1,380 @@
 {
-  "name": "Clara Answers Automation Pipeline & Webhook",
+  "name": "Clara Answers — Transcript Pipeline",
   "nodes": [
     {
       "parameters": {
-        "triggerOn": "folder",
-        "path": "/home/node/data/inbox",
-        "events": [
-          "add"
-        ],
-        "options": {
-          "awaitWriteFinish": true,
-          "ignore": "**/.DS_Store"
-        }
+        "path": "retell-webhook",
+        "responseMode": "responseNode",
+        "options": {}
       },
-      "name": "Local File Trigger - Inbox",
-      "type": "n8n-nodes-base.localFileTrigger",
-      "position": [
-        250,
-        200
-      ],
-      "typeVersion": 1,
-      "id": "1"
+      "id": "node-webhook-retell",
+      "name": "Retell Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "clara-retell-inbound",
+      "notes": "Receives POST from Retell AI call_ended event.\nConfigure in Retell Dashboard → Agent → Webhook URL.\nExpected: event, call_id, transcript, metadata.call_type, metadata.account_id"
     },
     {
       "parameters": {
-        "command": "=\"python3 /home/node/scripts/process.py --file \" + $json[\"path\"]"
-      },
-      "name": "Execute Pipeline",
-      "type": "n8n-nodes-base.executeCommand",
-      "position": [
-        450,
-        200
-      ],
-      "typeVersion": 1,
-      "id": "2"
-    },
-    {
-      "parameters": {
-        "keepOnlySet": false,
-        "values": {
-          "string": [
+        "rule": {
+          "interval": [
             {
-              "name": "status",
-              "value": "Success"
+              "field": "minutes",
+              "minutesInterval": 5
             }
           ]
-        },
-        "options": {}
+        }
       },
-      "name": "Log Success",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        650,
-        200
-      ],
-      "typeVersion": 1,
-      "id": "3"
+      "id": "node-schedule-inbox",
+      "name": "Inbox Poller (Every 5min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 500],
+      "notes": "Polls data/inbox/ for new transcript files (batch mode)."
     },
     {
       "parameters": {
-        "path": "post-call-analysis",
-        "responseMode": "onReceived",
-        "options": {}
+        "jsCode": "// Route: Retell webhook vs file-based trigger\nconst items = $input.all();\nconst item = items[0];\n\nlet source = 'unknown';\nlet transcript = null;\nlet call_type = 'demo';\nlet account_id = null;\nlet company_name = null;\n\nif (item.json.body) {\n  // Retell webhook path\n  const body = item.json.body;\n  source = 'retell_webhook';\n  transcript = body.transcript || '';\n  call_type = (body.metadata && body.metadata.call_type) || 'demo';\n  account_id = (body.metadata && body.metadata.account_id) || null;\n  company_name = (body.metadata && body.metadata.company_name) || null;\n  \n  if (body.event !== 'call_ended') {\n    return [{ json: { skip: true, reason: 'not_call_ended' } }];\n  }\n  if (!transcript) {\n    return [{ json: { skip: true, reason: 'empty_transcript' } }];\n  }\n}\n\nreturn [{\n  json: {\n    source,\n    transcript,\n    call_type,\n    account_id,\n    company_name,\n    skip: false\n  }\n}];"
       },
-      "name": "Retell Webhook",
-      "type": "n8n-nodes-base.webhook",
-      "position": [
-        250,
-        500
-      ],
-      "webhookId": "post-call-analysis",
-      "typeVersion": 1,
-      "id": "4"
+      "id": "node-normalize",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 300]
     },
     {
       "parameters": {
         "conditions": {
-          "boolean": [
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
             {
-              "value1": "={{ $json.body.call.transcript_object.is_emergency }}",
-              "value2": true
+              "id": "skip-check",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-skip-check",
+      "name": "Skip Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/transcripts/submit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "transcript_text",
+              "value": "={{ $json.transcript }}"
+            },
+            {
+              "name": "transcript_type",
+              "value": "={{ $json.call_type }}"
+            },
+            {
+              "name": "account_id",
+              "value": "={{ $json.account_id }}"
+            },
+            {
+              "name": "company_name",
+              "value": "={{ $json.company_name }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "node-submit-to-fastapi",
+      "name": "Submit to FastAPI",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 200],
+      "notes": "Sends normalized transcript to FastAPI /transcripts/submit.\nFastAPI runs the full pipeline asynchronously."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Wait 8 seconds then poll for results\nawait new Promise(r => setTimeout(r, 8000));\n\nconst accountId = $('Submit to FastAPI').first().json.account_id;\nreturn [{ json: { account_id: accountId } }];"
+      },
+      "id": "node-wait-for-pipeline",
+      "name": "Wait for Pipeline",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 200],
+      "notes": "Brief wait to allow async pipeline to complete before result check."
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:8000/accounts/{{ $json.account_id }}",
+        "options": {}
+      },
+      "id": "node-check-results",
+      "name": "Check Results",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1440, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "v2-check",
+              "leftValue": "={{ Object.keys($json.versions || {}).includes('v2') }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-v2-exists",
+      "name": "Has v2?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1680, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://localhost:8000/accounts/{{ $json.account_id }}/changelog",
+        "options": {}
+      },
+      "id": "node-fetch-changelog",
+      "name": "Fetch Changelog",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1920, 120],
+      "notes": "Fetches markdown diff for v1→v2 transition."
+    },
+    {
+      "parameters": {
+        "filePath": "=changelogs/{{ $json.account_id }}_pipeline_log.json",
+        "dataPropertyName": "data",
+        "options": {}
+      },
+      "id": "node-log-success",
+      "name": "Log Success",
+      "type": "n8n-nodes-base.writeFile",
+      "typeVersion": 1,
+      "position": [2160, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Scan data/inbox for unprocessed .txt files\nconst fs = require('fs');\nconst path = require('path');\n\nconst inboxDir = 'data/inbox';\nconst processedLog = 'data/processed.json';\n\nlet processed = [];\nif (fs.existsSync(processedLog)) {\n  processed = JSON.parse(fs.readFileSync(processedLog, 'utf8'));\n}\n\nif (!fs.existsSync(inboxDir)) {\n  return [{ json: { files: [] } }];\n}\n\nconst files = fs.readdirSync(inboxDir)\n  .filter(f => f.endsWith('.txt') && !processed.includes(f))\n  .map(f => ({\n    filename: f,\n    filepath: path.join(inboxDir, f),\n    call_type: f.startsWith('onboarding') ? 'onboarding' : 'demo',\n    transcript: fs.readFileSync(path.join(inboxDir, f), 'utf8')\n  }));\n\nreturn files.map(f => ({ json: f }));"
+      },
+      "id": "node-scan-inbox",
+      "name": "Scan Inbox",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 500],
+      "notes": "Reads data/inbox/ for .txt files not yet processed.\nFilenames starting with 'onboarding' are treated as onboarding type."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/transcripts/submit",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "transcript_text",
+              "value": "={{ $json.transcript }}"
+            },
+            {
+              "name": "transcript_type",
+              "value": "={{ $json.call_type }}"
             }
           ]
         }
       },
-      "name": "Is Emergency?",
-      "type": "n8n-nodes-base.if",
-      "position": [
-        450,
-        500
-      ],
-      "typeVersion": 1,
-      "id": "5"
+      "id": "node-batch-submit",
+      "name": "Batch Submit Files",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [720, 500]
     },
     {
       "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            {
-              "name": "Call ID",
-              "value": "={{ $json.body.call.call_id }}"
-            },
-            {
-              "name": "Caller Name",
-              "value": "={{ $json.body.call.transcript_object.caller_name }}"
-            },
-            {
-              "name": "Caller Phone",
-              "value": "={{ $json.body.call.transcript_object.caller_phone }}"
-            },
-            {
-              "name": "Purpose",
-              "value": "={{ $json.body.call.transcript_object.purpose_of_call }}"
-            },
-            {
-              "name": "Is Emergency",
-              "value": "Yes"
-            },
-            {
-              "name": "Outcome",
-              "value": "={{ $json.body.call.transcript_object.call_outcome }}"
-            },
-            {
-              "name": "Duration",
-              "value": "={{ $json.body.call.duration_ms }}"
-            }
-          ]
-        },
-        "options": {}
+        "jsCode": "// Mark file as processed\nconst fs = require('fs');\nconst processedLog = 'data/processed.json';\nconst filename = $('Scan Inbox').first().json.filename;\n\nlet processed = [];\nif (fs.existsSync(processedLog)) {\n  processed = JSON.parse(fs.readFileSync(processedLog, 'utf8'));\n}\n\nif (!processed.includes(filename)) {\n  processed.push(filename);\n  fs.writeFileSync(processedLog, JSON.stringify(processed, null, 2));\n}\n\nreturn [{ json: { marked: filename } }];"
       },
-      "name": "Prepare Emergency Row",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        700,
-        400
-      ],
-      "typeVersion": 1,
-      "id": "6"
+      "id": "node-mark-processed",
+      "name": "Mark Processed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 500]
     },
     {
       "parameters": {
-        "keepOnlySet": true,
-        "values": {
-          "string": [
-            {
-              "name": "Call ID",
-              "value": "={{ $json.body.call.call_id }}"
-            },
-            {
-              "name": "Caller Name",
-              "value": "={{ $json.body.call.transcript_object.caller_name }}"
-            },
-            {
-              "name": "Caller Phone",
-              "value": "={{ $json.body.call.transcript_object.caller_phone }}"
-            },
-            {
-              "name": "Purpose",
-              "value": "={{ $json.body.call.transcript_object.purpose_of_call }}"
-            },
-            {
-              "name": "Is Emergency",
-              "value": "No"
-            },
-            {
-              "name": "Outcome",
-              "value": "={{ $json.body.call.transcript_object.call_outcome }}"
-            },
-            {
-              "name": "Duration",
-              "value": "={{ $json.body.call.duration_ms }}"
-            }
-          ]
-        },
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"received\", \"message\": \"Pipeline triggered\" }",
         "options": {}
       },
-      "name": "Prepare Standard Row",
-      "type": "n8n-nodes-base.set",
-      "position": [
-        700,
-        600
-      ],
+      "id": "node-webhook-response",
+      "name": "Webhook Response",
+      "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "id": "7"
+      "position": [960, 360],
+      "notes": "Returns 200 to Retell immediately so it doesn't retry."
     },
     {
       "parameters": {
-        "operation": "append",
-        "documentId": {
-          "__rl": true,
-          "value": "PLACEHOLDER_SPREADSHEET_ID_HERE",
-          "mode": "id"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "Sheet1",
-          "mode": "name"
-        },
-        "options": {}
+        "jsCode": "// Log skip event\nconsole.log('[SKIP]', $json.reason);\nreturn [{ json: { skipped: true, reason: $json.reason } }];"
       },
-      "name": "Google Sheets",
-      "type": "n8n-nodes-base.googleSheets",
-      "position": [
-        950,
-        500
-      ],
-      "typeVersion": 3,
-      "id": "8"
+      "id": "node-skip-log",
+      "name": "Log Skip",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [960, 440]
     }
   ],
   "connections": {
-    "Local File Trigger - Inbox": {
+    "Retell Webhook Trigger": {
       "main": [
         [
           {
-            "node": "Execute Pipeline",
+            "node": "Normalize Input",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Execute Pipeline": {
+    "Inbox Poller (Every 5min)": {
+      "main": [
+        [
+          {
+            "node": "Scan Inbox",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "Skip Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Skip Check": {
+      "main": [
+        [
+          {
+            "node": "Log Skip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Submit to FastAPI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Webhook Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit to FastAPI": {
+      "main": [
+        [
+          {
+            "node": "Wait for Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Check Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Results": {
+      "main": [
+        [
+          {
+            "node": "Has v2?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has v2?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Changelog",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Changelog": {
       "main": [
         [
           {
@@ -233,51 +385,22 @@
         ]
       ]
     },
-    "Retell Webhook": {
+    "Scan Inbox": {
       "main": [
         [
           {
-            "node": "Is Emergency?",
+            "node": "Batch Submit Files",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Is Emergency?": {
+    "Batch Submit Files": {
       "main": [
         [
           {
-            "node": "Prepare Emergency Row",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Prepare Standard Row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Emergency Row": {
-      "main": [
-        [
-          {
-            "node": "Google Sheets",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Standard Row": {
-      "main": [
-        [
-          {
-            "node": "Google Sheets",
+            "node": "Mark Processed",
             "type": "main",
             "index": 0
           }
@@ -285,6 +408,15 @@
       ]
     }
   },
-  "active": false,
-  "settings": {}
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": ["clara", "pipeline", "retell"],
+  "triggerCount": 2,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "clara-v1"
 }
