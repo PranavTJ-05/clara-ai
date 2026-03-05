@@ -71,3 +71,70 @@ It utilizes explicit commands like:
 And implements rigid structural flows:
 `=== BUSINESS HOURS FLOW ===` and `=== AFTER HOURS FLOW ===`
 to prevent hallucination and assure safe escalation.
+
+## Folder Structure
+```text
+clara-pipeline/
+│
+├── scripts/                        # Core Python processing engine
+│   ├── api.py                      # FastAPI app — all endpoints
+│   ├── schemas.py                  # Pydantic models (AccountMemo, RetellAgentSpec)
+│   ├── extractor.py                # LLM transcript extraction (Groq / Ollama)
+│   ├── agent_builder.py            # AccountMemo → RetellAgentSpec
+│   ├── differ.py                   # v1 vs v2 changelog generator
+│   ├── tracker.py                  # Task log → tasks.json
+│   ├── process.py                  # CLI entry point
+│
+├── workflows/
+│   └── clara_pipeline.json         # n8n workflow (import into n8n UI)
+│
+├── data/
+│   ├── inbox/                      # Drop transcript .txt files here (batch mode)
+│   │   ├── demo_1.txt
+│   │   ├── onboarding_1.txt
+│   │   └── ...
+│   ├── mock_generator.py           # Generated mock transcripts
+│
+├── outputs/
+│   └── accounts/
+│       └── <account_id>/
+│           ├── v1/
+│           │   ├── memo.json       # AccountMemo from demo call
+│           │   └── agent_spec.json # RetellAgentSpec v1
+│           └── v2/
+│               ├── memo.json       # Merged AccountMemo from onboarding
+│               └── agent_spec.json # RetellAgentSpec v2
+│
+├── changelogs/
+│   └── <account_id>_diff.md        # Human-readable v1→v2 diff
+│
+├── tasks.json                      # Pipeline task log (replaces CRM)
+│
+├── docker-compose.yml              # Runs n8n Orchestrator via Docker
+├── Dockerfile.n8n                  # n8n custom dockerfile
+└── README.md                       # Project documentation
+```
+
+## Quick Start
+**1. Set environment variables**
+```bash
+cp .env.example .env
+# Add your GROQ_API_KEY (free at console.groq.com)
+```
+**2. Start services**
+```bash
+docker-compose up -d
+```
+**3. Import n8n workflow**
+1. Open http://localhost:5678
+2. Import `workflows/clara_pipeline.json`
+3. Activate the workflow
+
+**4. Configure Retell webhook**
+Using ngrok: `https://your-domain.ngrok-free.app/webhook/post-call-analysis`
+
+**5. Process via CLI (or drop files into data/inbox)**
+```bash
+# Generate the massive dataset (triggers n8n automatically)
+python scripts/mock_generator.py
+```
