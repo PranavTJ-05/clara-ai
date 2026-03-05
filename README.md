@@ -6,15 +6,15 @@ This repository contains a full, zero-cost, end-to-end automation pipeline to pr
 
 This project uses a hybrid architecture designed to securely manage API keys, utilize free-tier tools exclusively, and provide a repeatable, idempotent data pipeline.
 
-1. **Ingestion (n8n & Docker):** Transcripts are dropped into the `data/inbox/` folder. A locally hosted instance of n8n monitors this folder.
-2. **Extraction Engine (Python & Groq):** When a file appears, n8n triggers the Python CLI `scripts/process.py`.
-3. **LLM Parsing (Groq API):** The script sends the transcript to the free-tier Groq API using the latest `llama-3.3-70b-versatile` model to extract structured metadata (AccountMemo).
-4. **Agent Spec Generation:** Based on the extracted metadata, the script generates a strict system prompt (`agent_spec.json`) enforcing conversation hygiene (v1 for Demo, v2 for Onboarding).
-5. **Versioning & Diffing:** Onboarding calls merge updates over the Demo configurations and generate a markdown changelog in `/changelogs/`.
-6. **Task Tracking:** The pipeline logs automated task tickets locally to `tasks.json` instead of paying for external APIs.
-7. **Retell AI WebSocket Backend (FastAPI & Railway):** A lightweight FastAPI server is deployed to Railway on a free tier. Retell connects to this via WebSocket. The backend reads the generated `agent_spec.json` and creates a seamless, low-latency conversational agent connected to Groq.
-8. **Post-Call Data Extraction (ngrok & n8n):** When the call finishes, Retell extracts conversational metadata (Name, Phone, Emergency status) and sends it over a webhook to a secure ngrok tunnel routing back into your local n8n instance.
-9. **Analytics (Google Sheets):** n8n parses the webhook and logs the organized caller data into a Google Sheet.
+1. **Zero-Cost Orchestrator (n8n & Docker):** A single locally hosted instance of n8n orchestrates two parallel, isolated pipelines simultaneously:
+   * **Pipeline 1 (Agent Initialization):** Listens to `data/inbox/`. When a script drops a call transcript, n8n triggers the Python extraction engine.
+   * **Pipeline 2 (Post-Call Analysis):** An exposed n8n webhook listens to Retell AI. It captures post-call data, checks for "Emergency" parameters to determine conditional routing routing, and perfectly maps the result into Google Sheets columns.
+2. **LLM Extraction Engine (Python & Groq API):** The Python scripts parse transcripts using the free-tier Groq API and the `llama-3.3-70b-versatile` model to extract AccountMemo metadata.
+3. **Agent Spec Generation:** Extracted metadata is synthesized into a rigid system prompt (`agent_spec.json`) enforcing business hours and emergency conversation hygiene (v1 for Demo, v2 for Onboarding).
+4. **Versioning & Diffing:** Onboarding calls merge new rules over Demo configurations and automatically generate a markdown diff in `/changelogs/`.
+5. **Task Tracking:** The pipeline tracks completion by locally writing tasks to `tasks.json`.
+6. **Retell AI WebSocket Backend (FastAPI & Railway):** A FastAPI server deployed to Railway free-tier accepts Retell interactions over a continuous WebSocket, retrieves the generated `agent_spec.json`, and seamlessly connects the voice stream to Groq.
+7. **Secure Tunneling (ngrok):** The Retell Post-Call Analysis reaches your local n8n Pipeline 2 through a secure ngrok tunnel.
 
 ## Setup Instructions
 
