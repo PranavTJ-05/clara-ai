@@ -1,50 +1,43 @@
-version: "3.8"
+version: '3.8'
 
 services:
-
-  clara-api:
+  n8n:
     build:
       context: .
-      dockerfile: Dockerfile.api
-    container_name: clara-api
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./outputs:/app/outputs
-      - ./changelogs:/app/changelogs
-      - ./tasks:/app/tasks
-      - ./data:/app/data
-    environment:
-      - GROQ_API_KEY=${GROQ_API_KEY}
-    restart: unless-stopped
-    networks:
-      - clara-net
-
-  n8n:
-    image: n8nio/n8n:latest
-    container_name: clara-n8n
+      dockerfile: Dockerfile.n8n
     ports:
       - "5678:5678"
     volumes:
       - n8n_data:/home/node/.n8n
-      - ./workflows:/workflows
-      - ./data:/data
+      - ./data:/home/node/data
+      - ./scripts:/home/node/scripts
+      - ./outputs:/home/node/outputs
+      - ./changelogs:/home/node/changelogs
+      - ./tasks.json:/home/node/tasks.json
     environment:
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=clara2024
-      - WEBHOOK_URL=http://localhost:5678/
-      - N8N_HOST=localhost
+      - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
-    restart: unless-stopped
-    networks:
-      - clara-net
-    depends_on:
-      - clara-api
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      # Pass through user API keys for the Python Scripts
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-groq/llama-3.1-8b-instant}
+      # Re-enable File Trigger and Execute Command nodes
+      - NODES_EXCLUDE=[]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n
+    command: uvicorn scripts.api:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./scripts:/home/node/scripts
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - LLM_MODEL=${LLM_MODEL:-llama-3.3-70b-versatile}
 
 volumes:
   n8n_data:
-
-networks:
-  clara-net:
-    driver: bridge
