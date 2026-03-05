@@ -1,5 +1,5 @@
 {
-  "name": "Clara Answers Automation Pipeline",
+  "name": "Clara Answers Automation Pipeline & Webhook",
   "nodes": [
     {
       "parameters": {
@@ -56,6 +56,158 @@
       ],
       "typeVersion": 1,
       "id": "3"
+    },
+    {
+      "parameters": {
+        "path": "post-call-analysis",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "name": "Retell Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        250,
+        500
+      ],
+      "webhookId": "post-call-analysis",
+      "typeVersion": 1,
+      "id": "4"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.body.call.transcript_object.is_emergency }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "name": "Is Emergency?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        450,
+        500
+      ],
+      "typeVersion": 1,
+      "id": "5"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Call ID",
+              "value": "={{ $json.body.call.call_id }}"
+            },
+            {
+              "name": "Caller Name",
+              "value": "={{ $json.body.call.transcript_object.caller_name }}"
+            },
+            {
+              "name": "Caller Phone",
+              "value": "={{ $json.body.call.transcript_object.caller_phone }}"
+            },
+            {
+              "name": "Purpose",
+              "value": "={{ $json.body.call.transcript_object.purpose_of_call }}"
+            },
+            {
+              "name": "Is Emergency",
+              "value": "Yes"
+            },
+            {
+              "name": "Outcome",
+              "value": "={{ $json.body.call.transcript_object.call_outcome }}"
+            },
+            {
+              "name": "Duration",
+              "value": "={{ $json.body.call.duration_ms }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepare Emergency Row",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        700,
+        400
+      ],
+      "typeVersion": 1,
+      "id": "6"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "Call ID",
+              "value": "={{ $json.body.call.call_id }}"
+            },
+            {
+              "name": "Caller Name",
+              "value": "={{ $json.body.call.transcript_object.caller_name }}"
+            },
+            {
+              "name": "Caller Phone",
+              "value": "={{ $json.body.call.transcript_object.caller_phone }}"
+            },
+            {
+              "name": "Purpose",
+              "value": "={{ $json.body.call.transcript_object.purpose_of_call }}"
+            },
+            {
+              "name": "Is Emergency",
+              "value": "No"
+            },
+            {
+              "name": "Outcome",
+              "value": "={{ $json.body.call.transcript_object.call_outcome }}"
+            },
+            {
+              "name": "Duration",
+              "value": "={{ $json.body.call.duration_ms }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Prepare Standard Row",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        700,
+        600
+      ],
+      "typeVersion": 1,
+      "id": "7"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "PLACEHOLDER_SPREADSHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "name": "Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        950,
+        500
+      ],
+      "typeVersion": 3,
+      "id": "8"
     }
   ],
   "connections": {
@@ -75,6 +227,57 @@
         [
           {
             "node": "Log Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retell Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Emergency?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Emergency?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Emergency Row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Standard Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Emergency Row": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Standard Row": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
             "type": "main",
             "index": 0
           }
